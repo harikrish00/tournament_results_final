@@ -31,10 +31,10 @@ $python tournmanet_test.py
 ```
 
 #### Files and its purpose:
-- tournament.py # Contains the actual logic for tournament results
-- tournament.sql # Contains the sql statement for creating database, tables and
+- `tournament.py` # Contains the actual logic for tournament results
+- `tournament.sql` # Contains the sql statement for creating database, tables and
   views
-- tournament_test.py # Master test file contains all the test cases to test the
+- `tournament_test.py` # Master test file contains all the test cases to test the
   logic
-- tournament_extra_credit_test # Tests the extra credit requirements
+- `tournament_extra_credit_test.py` # Tests the extra credit requirements
 
