@@ -7,15 +7,20 @@ import psycopg2
 import math
 import random
 
-def connect():
+def connect(database_name="tournament"):
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    try:
+        db = psycopg2.connect("dbname={}".format(database_name))
+        cursor = db.cursor()
+        return db, cursor
+    except(e):
+        print "Unable to connect to database, please try again:", e.message
 
 def create_tournament(name=''):
     """Create a new tournament for conducting mathces"""
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("insert into tournaments (name) values (%s) returning id", (name,))
+    conn, cursor = connect()
+    query = "insert into tournaments (name) values (%s) returning id"
+    cursor.execute(query, (name,))
     t_id = cursor.fetchone()[0]
     conn.commit()
     conn.close()
@@ -23,8 +28,7 @@ def create_tournament(name=''):
 
 def delete_tournament():
     """Remove all the records from the tournaments."""
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     query = "delete from tournaments"
     cursor.execute(query);
     conn.commit()
@@ -32,27 +36,27 @@ def delete_tournament():
 
 def delete_table(t_id, table_name):
     """Remove all the records from the given table."""
-    conn = connect()
-    cursor = conn.cursor()
-    query = "delete from %s where t_id=%d" % (table_name, t_id)
-    cursor.execute(query);
+    conn, cursor = connect()
+    query = "delete from {}".format(table_name)
+    query += " where t_id=%s"
+    cursor.execute(query, (t_id,));
     conn.commit()
     conn.close()
 
 def count_players(t_id):
     """Returns the number of players currently registered."""
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("select count(*) from players where t_id=%d" % t_id)
+    conn, cursor = connect()
+    query = "select count(*) from players where t_id=%s"
+    cursor.execute(query, (t_id,))
     count = cursor.fetchone()[0]
     conn.close()
     return count
 
 def player_with_byes(t_id):
     """Returns all the players who have recieved bye"""
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("select * from player_byes where t_id=%d" % t_id)
+    conn, cursor = connect()
+    query = "select * from player_byes where t_id=%s"
+    cursor.execute(query, (t_id,))
     player_byes = cursor.fetchall()
     conn.close()
     return player_byes
@@ -67,13 +71,11 @@ def register_player(t_id, name):
       t_id: tournament id where the player is registering to
       name: the player's full name (need not be unique).
     """
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
     sql = "insert into players (t_id, name) values (%s, %s)"
     cursor.execute(sql, (t_id, name))
     conn.commit()
     conn.close()
-
 
 def player_match_points(t_id, match_id):
     """Returns players points for a particular match
@@ -86,9 +88,9 @@ def player_match_points(t_id, match_id):
       t_id: tournament id where player belongs to
       match_id: id of the match
     """
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("select * from player_match_points where t_id=%d and match_id=%d" % (t_id, match_id))
+    conn, cursor = connect()
+    query = "select * from player_match_points where t_id=%s and match_id=%s"
+    cursor.execute(query, (t_id, match_id))
     points = cursor.fetchall()
     conn.close()
     return points
@@ -106,9 +108,9 @@ def player_standings(t_id):
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("select * from standings where t_id=%d" % t_id)
+    conn, cursor = connect()
+    query = "select * from standings where t_id=%s"
+    cursor.execute(query, (t_id,))
     standings = cursor.fetchall()
     conn.close()
     return standings
@@ -121,10 +123,10 @@ def report_match(t_id, match_id, winner, loser, draw = False):
       loser:  the id number of the player who lost
       draw: A boolean, to report a match draw. Carries default value of False.
     """
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("insert into match_results(t_id, match_id, winner, loser, draw) \
-                        values(%d, %d, %d, %d, %s)" % (t_id, match_id, winner, loser, draw))
+    conn, cursor = connect()
+    query = "insert into match_results(t_id, match_id, winner, loser, draw) \
+                        values(%s, %s, %s, %s, %s)"
+    cursor.execute(query, (t_id, match_id, winner, loser, draw))
 
     # If match is draw then assign one point for each player
     if draw == True:
@@ -135,17 +137,19 @@ def report_match(t_id, match_id, winner, loser, draw = False):
         winner_points = 3
         loser_points = 0
 
-    cursor.execute("insert into player_match_points (t_id, match_id, player_id, points) \
-                        values (%d, %d, %d, %d)" % (t_id, match_id, winner, winner_points))
-    cursor.execute("insert into player_match_points (t_id, match_id, player_id, points) \
-                        values (%d, %d, %d, %d)" % (t_id, match_id, loser, loser_points))
+    winner_query = "insert into player_match_points (t_id, match_id, player_id, points) \
+                        values (%s, %s, %s, %s)"
+    loser_query = "insert into player_match_points (t_id, match_id, player_id, points) \
+                        values (%s, %s, %s, %s)"
+    cursor.execute( winner_query, (t_id, match_id, winner, winner_points))
+    cursor.execute( loser_query, (t_id, match_id, loser, loser_points))
     conn.commit()
     conn.close()
 
 def player_with_no_bye(t_id):
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("select players.id from players, player_byes where player_byes.player_id <> players.id and t_id=%d" % t_id)
+    conn, cursor = connect()
+    query = "select players.id from players, player_byes where player_byes.player_id <> players.id and t_id=%s"
+    cursor.execute( query, (t_id,))
     player = cursor.fetchone()[0]
     conn.close()
     return player
@@ -153,18 +157,19 @@ def player_with_no_bye(t_id):
 def report_bye(t_id, player_id):
     """ Records bye for a user when there are odd number of players registered for the tournament """
 
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute("insert into matches (t_id, player_one) values(%d, %d)" % (t_id,player_id))
+    conn, cursor = connect()
+    query = "insert into matches (t_id, player_one) values(%s, %s)"
+    cursor.execute( query, (t_id,player_id))
     conn.commit()
     cursor.execute("select max(id) from matches")
     match_id = cursor.fetchone()[0]
     points = 3
     bye = 1
-    cursor.execute("insert into player_match_points (t_id, match_id, player_id, points) \
-                        values(%d, %d, %d, %d)" % (t_id, match_id, player_id, points))
-    cursor.execute("insert into player_byes (t_id, player_id, bye) \
-                        values(%d, %d, %d)" % (t_id, player_id, bye))
+    points_query = "insert into player_match_points (t_id, match_id, player_id, points) \
+                        values(%s, %s, %s, %s)"
+    bye_query = "insert into player_byes (t_id, player_id, bye) values(%s, %s, %s)"
+    cursor.execute( points_query, (t_id, match_id, player_id, points))
+    cursor.execute( bye_query, (t_id, player_id, bye))
     conn.commit()
     conn.close()
 
@@ -222,10 +227,10 @@ def swiss_pairings(t_id):
 
 def create_matches(t_id, game_pairs):
     """Create the matches after a swiss pairing is generated"""
-    conn = connect()
-    cursor = conn.cursor()
+    conn, cursor = connect()
+    query = "insert into matches (t_id, player_one, player_two) values(%s, %s, %s)"
     for pair in game_pairs:
-        cursor.execute("insert into matches (t_id, player_one, player_two) values(%d, %d, %d)" % (t_id, pair[0], pair[2]))
+        cursor.execute( query, (t_id, pair[0], pair[2]))
         conn.commit()
     conn.close()
 
@@ -238,10 +243,10 @@ def get_sorted_matches(matches):
 
 def get_matches(t_id):
     """Returns all the matches scheduled to be played"""
-    conn = connect()
-    c = conn.cursor()
-    c.execute("select * from matches where t_id=%d" % t_id)
-    matches = c.fetchall()
+    conn, cursor = connect()
+    query = "select * from matches where t_id=%s"
+    cursor.execute( query, (t_id,))
+    matches = cursor.fetchall()
     conn.close()
     return matches
 
