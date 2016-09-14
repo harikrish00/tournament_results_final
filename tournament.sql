@@ -23,13 +23,6 @@ CREATE TABLE players (
   t_id INTEGER REFERENCES tournaments(id) ON DELETE CASCADE
 );
 
--- CREATE TABLE matches (
---   id SERIAL PRIMARY KEY,
---   player_one INTEGER REFERENCES players(id),
---   player_two INTEGER REFERENCES players(id),
---   t_id INTEGER REFERENCES tournaments(id) ON DELETE CASCADE
--- );
-
 CREATE TABLE matches (
   id SERIAL PRIMARY KEY,
   winner INTEGER REFERENCES players(id),
@@ -46,12 +39,6 @@ CREATE TABLE player_match_points(
   match_id INTEGER REFERENCES matches(id),
   points INTEGER
 );
-
--- CREATE TABLE player_byes(
---     player_id INTEGER REFERENCES players(id),
---     bye INTEGER DEFAULT 0,
---     t_id INTEGER REFERENCES tournaments(id) ON DELETE CASCADE
--- );
 
 CREATE VIEW standings AS
 SELECT players.t_id, players.id, players.name,

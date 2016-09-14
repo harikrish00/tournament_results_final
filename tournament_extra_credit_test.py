@@ -28,7 +28,8 @@ def test_rematch_is_prevented():
             rematch = True
     if rematch:
         raise ValueError(
-            "Rematch between players should be prevented, and total rematch occurred is %d" % (len(matches)- len(set(matches))))
+            "Rematch between players should be prevented, and total rematch \
+            occurred is %d" % (len(matches)- len(set(matches))))
     print "1. Rematch between players is prevented. Good Job!"
     delete_tournament()
 
@@ -43,14 +44,16 @@ def test_assign_bye_for_odd_number_of_players():
     player_byes = player_with_byes(t_id)
     if not len(player_byes) == 1:
         raise ValueError(
-            "A player should be assigned a bye when odd number of players registered, total bye assigned is 0")
+            "A player should be assigned a bye when odd number of players \
+            registered, total bye assigned is 0")
     print "2. A player is assigned a bye when odd number of players are registered"
     standings = player_standings(t_id)
     for item in standings:
         if item[1] == player_byes[0][0]:
             if not item[5] == 3 and item[4] == 1:
                 raise ValueError(
-                    "A bye should be counted as free win and 3 points should be assigned to the user, total points %d" % item[5])
+                    "A bye should be counted as free win and 3 points should be \
+                    assigned to the user, total points %d" % item[5])
     print "3. A bye is counted as free win and player is assigned 3 points"
     delete_tournament()
 
@@ -70,7 +73,9 @@ def test_support_for_match_draw():
         print "4. Support for match draw is implemented, each player is given 1 points"
     else:
         raise ValueError(
-            "Support for match draw should be supported, and each player should be given 1 points each, but the points for player 1 is %d and player 2 is %d" % (points[0][4],points[1][4]))
+            "Support for match draw should be supported, \
+            and each player should be given 1 points each, \
+            but the points for player 1 is %d and player 2 is %d" % (points[0][4],points[1][4]))
     delete_tournament()
 
 def test_more_than_one_tournament_is_supported():
@@ -94,7 +99,8 @@ def test_more_than_one_tournament_is_supported():
             raise ValueError(
                 "Registered players are not found in the tournament")
             player_foudn = False
-    print "5. Supports more than one tournament, and players registering for particular tournament belongs to the same tournament"
+    print "5. Supports more than one tournament, and players registering for \
+     particular tournament belongs to the same tournament"
     delete_tournament()
 
 if __name__ == '__main__':

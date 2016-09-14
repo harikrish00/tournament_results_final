@@ -95,16 +95,6 @@ def testreport_matches():
     print "7. After a match, players have updated standings."
     delete_tournament()
 
-    # delete_table('matches')
-    # standings = player_standings()
-    # if len(standings) != 4:
-    #     raise ValueError("Match deletion should not change number of players in standings.")
-    # for (i, n, w, m, p, o) in standings:
-    #     if m != 0:
-    #         raise ValueError("After deleting matches, players should have zero matches recorded.")
-    #     if w != 0:
-    #         raise ValueError("After deleting matches, players should have zero wins recorded.")
-    # print "8. After match deletion, player standings are properly reset.\n9. Matches are properly deleted."
 
 def testPairings():
     """
