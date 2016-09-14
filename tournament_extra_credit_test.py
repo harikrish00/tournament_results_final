@@ -60,12 +60,13 @@ def test_support_for_match_draw():
     register_player(t_id, 'Tena Stone')
     register_player(t_id, 'Norma Chapa')
     register_player(t_id, 'Theresa Fisher')
-    swiss_pairings(t_id)
-    matches = get_matches(t_id)
+    matches = swiss_pairings(t_id)
     match = matches[0]
-    report_match(match[3],match[0],match[1],match[2],draw=True)
-    points = player_match_points(match[3],match[0])
-    if len(points) == 2 and points[0][4] == 1 and points[1][4] == 1:
+    report_match(t_id,match[0],match[2],draw=True)
+    matches = get_matches(t_id)
+    points = player_match_points(t_id, matches[0][0])
+
+    if len(points) == 2 and points[0][5] == 1 and points[1][5] == 1:
         print "4. Support for match draw is implemented, each player is given 1 points"
     else:
         raise ValueError(

@@ -79,13 +79,11 @@ def testreport_matches():
     register_player(t_id, "Boots O'Neal")
     register_player(t_id, "Cathy Burton")
     register_player(t_id, "Diane Grant")
-    swiss_pairings(t_id)
-    matches = get_matches(t_id)
+    matches = swiss_pairings(t_id)
 
-    [match1,id1,id2] = [matches[0][0], matches[0][1], matches[0][2]]
-    [match2,id3,id4] = [matches[1][0],matches[1][1], matches[1][2]]
-    report_match(t_id, match1, id1, id2)
-    report_match(t_id, match2, id3, id4)
+    [id1,id2,id3,id4] = [matches[0][0], matches[0][2], matches[1][0], matches[1][2]]
+    report_match(t_id, id1, id2)
+    report_match(t_id, id3, id4)
     standings = player_standings(t_id)
     for (t, i, n, w, m, p, o) in standings:
         if m != 1:
@@ -121,20 +119,17 @@ def testPairings():
     register_player(t_id, "Rainbow Dash")
     register_player(t_id, "Princess Celestia")
     register_player(t_id, "Princess Luna")
-    pairings = swiss_pairings(t_id)
-    matches = get_matches(t_id)
-    [match1,id1,id2] = [matches[0][0], matches[0][1], matches[0][2]]
-    [match2,id3,id4] = [matches[1][0], matches[1][1],matches[1][2]]
-    [match3,id5,id6] = [matches[2][0], matches[2][1], matches[2][2]]
-    [match4,id7,id8] = [matches[3][0], matches[3][1],matches[3][2]]
+    matches = swiss_pairings(t_id)
+    [id1,id2,id3,id4,id5,id6,id7,id8] = [matches[0][0], matches[0][2],
+    matches[1][0], matches[1][2], matches[2][0], matches[2][2],matches[3][0], matches[3][2]]
 
-    if len(pairings) != 4:
+    if len(matches) != 4:
         raise ValueError(
             "For eight players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
-    report_match(t_id, match1, id1, id2)
-    report_match(t_id, match2, id3, id4)
-    report_match(t_id, match3, id5, id6)
-    report_match(t_id, match4, id7, id8)
+    report_match(t_id, id1, id2)
+    report_match(t_id, id3, id4)
+    report_match(t_id, id5, id6)
+    report_match(t_id, id7, id8)
     pairings = swiss_pairings(t_id)
     if len(pairings) != 4:
         raise ValueError(

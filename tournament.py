@@ -55,7 +55,7 @@ def count_players(t_id):
 def player_with_byes(t_id):
     """Returns all the players who have recieved bye"""
     conn, cursor = connect()
-    query = "select * from player_byes where t_id=%s"
+    query = "select * from player_match_points where t_id=%s and bye=1"
     cursor.execute(query, (t_id,))
     player_byes = cursor.fetchall()
     conn.close()
@@ -90,7 +90,7 @@ def player_match_points(t_id, match_id):
     """
     conn, cursor = connect()
     query = "select * from player_match_points where t_id=%s and match_id=%s"
-    cursor.execute(query, (t_id, match_id))
+    cursor.execute(query, (t_id,match_id))
     points = cursor.fetchall()
     conn.close()
     return points
@@ -115,7 +115,7 @@ def player_standings(t_id):
     conn.close()
     return standings
 
-def report_match(t_id, match_id, winner, loser, draw = False):
+def report_match(t_id, winner, loser, draw = False):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -124,9 +124,12 @@ def report_match(t_id, match_id, winner, loser, draw = False):
       draw: A boolean, to report a match draw. Carries default value of False.
     """
     conn, cursor = connect()
-    query = "insert into match_results(t_id, match_id, winner, loser, draw) \
-                        values(%s, %s, %s, %s, %s)"
-    cursor.execute(query, (t_id, match_id, winner, loser, draw))
+    query = "insert into matches(t_id, winner, loser, draw) \
+                        values(%s, %s, %s, %s)"
+    cursor.execute(query, (t_id, winner, loser, draw))
+    match_id_query = "select max(id) from matches where t_id=%s"
+    cursor.execute(match_id_query,(t_id,))
+    match_id = cursor.fetchone()[0]
 
     # If match is draw then assign one point for each player
     if draw == True:
@@ -137,41 +140,33 @@ def report_match(t_id, match_id, winner, loser, draw = False):
         winner_points = 3
         loser_points = 0
 
-    winner_query = "insert into player_match_points (t_id, match_id, player_id, points) \
+    winner_query = "insert into player_match_points (t_id, player_id, match_id, points) \
                         values (%s, %s, %s, %s)"
-    loser_query = "insert into player_match_points (t_id, match_id, player_id, points) \
+    loser_query = "insert into player_match_points (t_id, player_id, match_id, points) \
                         values (%s, %s, %s, %s)"
-    cursor.execute( winner_query, (t_id, match_id, winner, winner_points))
-    cursor.execute( loser_query, (t_id, match_id, loser, loser_points))
+    cursor.execute( winner_query, (t_id, winner, match_id, winner_points))
+    cursor.execute( loser_query, (t_id, loser, match_id, loser_points))
     conn.commit()
     conn.close()
 
 def player_with_no_bye(t_id):
     conn, cursor = connect()
-    query = "select players.id from players, player_byes where player_byes.player_id <> players.id and t_id=%s"
+    query = "select player_id from player_match_points where bye=0 and t_id=%s"
     cursor.execute( query, (t_id,))
     player = cursor.fetchone()[0]
     conn.close()
     return player
 
 def report_bye(t_id, player_id):
-    """ Records bye for a user when there are odd number of players registered for the tournament """
+    """ Records bye for a user when there are odd number of players registered
+    for the tournament """
 
     conn, cursor = connect()
-    query = "insert into matches (t_id, player_one) values(%s, %s)"
-    cursor.execute( query, (t_id,player_id))
-    conn.commit()
-    cursor.execute("select max(id) from matches")
-    match_id = cursor.fetchone()[0]
-    points = 3
     bye = 1
-    points_query = "insert into player_match_points (t_id, match_id, player_id, points) \
-                        values(%s, %s, %s, %s)"
-    bye_query = "insert into player_byes (t_id, player_id, bye) values(%s, %s, %s)"
-    cursor.execute( points_query, (t_id, match_id, player_id, points))
-    cursor.execute( bye_query, (t_id, player_id, bye))
+    points = 3
+    query = "insert into player_match_points (player_id, bye, points, t_id) values(%s, %s, %s, %s)"
+    cursor.execute( query, (player_id, bye, points, t_id ))
     conn.commit()
-    conn.close()
 
 def swiss_pairings(t_id):
     """Returns a list of pairs of players for the next round of a match.
@@ -191,17 +186,17 @@ def swiss_pairings(t_id):
     standings = player_standings(t_id)
     total_players = len(standings)
     game_pairs = []
-    #standings are always ordered by wins descending, and if the first player
-    #in the standings has 0 matches then its the first round
+    # standings are always ordered by wins descending, and if the first player
+    # in the standings has 0 matches then its the first round
     if standings[0][4] == 0:
-        #for the first round generate game pairs randomly
+        # for the first round generate game pairs randomly
         order = get_random_pairs(0, total_players)
         # check if even numbers of players are there
         if not total_players % 2 == 0:
             #in case of even numbers of players report bye for one player
             report_bye(t_id, standings[order[-1]][1])
             del order[-1]
-    #other than the initial round, generate the game pair based on standings
+    # other than the initial round, generate the game pair based on standings
     else:
         order = [i for i in range(total_players)]
         matches = get_matches(t_id)
@@ -222,17 +217,7 @@ def swiss_pairings(t_id):
                     del order[i]
                     break
     game_pairs = get_game_pairs(order, standings)
-    create_matches(t_id, game_pairs)
     return game_pairs
-
-def create_matches(t_id, game_pairs):
-    """Create the matches after a swiss pairing is generated"""
-    conn, cursor = connect()
-    query = "insert into matches (t_id, player_one, player_two) values(%s, %s, %s)"
-    for pair in game_pairs:
-        cursor.execute( query, (t_id, pair[0], pair[2]))
-        conn.commit()
-    conn.close()
 
 def get_sorted_matches(matches):
     """Sort the matches in ascending order for comparison"""
